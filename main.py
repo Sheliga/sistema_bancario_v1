@@ -1,6 +1,10 @@
 # sistema_bancario.py
 from datetime import datetime
 
+# ------------------------
+# Utilidades
+# ------------------------
+
 
 def agora() -> str:
     """Retorna timestamp formatado."""
@@ -28,6 +32,63 @@ def ler_valor(mensagem: str) -> float:
             log("Entrada inválida! Digite um número válido.")
 
 
+# ------------------------
+# Operações bancárias
+# ------------------------
+
+
+def depositar(saldo: float, extrato: list) -> float:
+    valor = ler_valor("Informe o valor do depósito: R$ ")
+    if valor <= 0:
+        log("Operação falhou! O valor do depósito deve ser positivo.")
+    else:
+        saldo += valor
+        extrato.append(f"[{agora()}] Depósito: {formatar_valor(valor)}")
+        log(f"Depósito de {formatar_valor(valor)} realizado com sucesso.")
+    return saldo
+
+
+def sacar(
+    saldo: float, extrato: list, numero_saques: int, limite: float, LIMITE_SAQUES: int
+) -> tuple:
+    valor = ler_valor("Informe o valor do saque: R$ ")
+
+    if valor <= 0:
+        log("Operação falhou! O valor do saque deve ser positivo.")
+    elif valor > saldo:
+        log("Operação falhou! Saldo insuficiente.")
+    elif valor > limite:
+        log(f"Operação falhou! O valor máximo por saque é {formatar_valor(limite)}.")
+    elif numero_saques >= LIMITE_SAQUES:
+        log("Operação falhou! Número máximo de saques diários atingido.")
+    else:
+        saldo -= valor
+        extrato.append(f"[{agora()}] Saque: {formatar_valor(valor)}")
+        numero_saques += 1
+        log(f"Saque de {formatar_valor(valor)} realizado com sucesso.")
+
+    return saldo, numero_saques
+
+
+def mostrar_extrato(saldo: float, extrato: list):
+    print("\n=== EXTRATO ===")
+    if not extrato:
+        log("Não foram realizadas movimentações.")
+    else:
+        for mov in extrato:
+            print(mov)
+    print(f"\nSaldo atual: {formatar_valor(saldo)}")
+
+
+def mostrar_saldo(saldo: float):
+    log(f"Saldo atual: {formatar_valor(saldo)}")
+
+
+# ------------------------
+# Programa principal
+# ------------------------
+
+
 def main():
     saldo = 0.0
     limite = 500.0
@@ -46,44 +107,18 @@ def main():
         opcao = input("Escolha uma opção: ")
 
         if opcao == "1":
-            valor = ler_valor("Informe o valor do depósito: R$ ")
-            if valor <= 0:
-                log("Operação falhou! O valor do depósito deve ser positivo.")
-            else:
-                saldo += valor
-                extrato.append(f"[{agora()}] Depósito: {formatar_valor(valor)}")
-                log(f"Depósito de {formatar_valor(valor)} realizado com sucesso.")
+            saldo = depositar(saldo, extrato)
 
         elif opcao == "2":
-            valor = ler_valor("Informe o valor do saque: R$ ")
-
-            if valor <= 0:
-                log("Operação falhou! O valor do saque deve ser positivo.")
-            elif valor > saldo:
-                log("Operação falhou! Saldo insuficiente.")
-            elif valor > limite:
-                log(
-                    f"Operação falhou! O valor máximo por saque é {formatar_valor(limite)}."
-                )
-            elif numero_saques >= LIMITE_SAQUES:
-                log("Operação falhou! Número máximo de saques diários atingido.")
-            else:
-                saldo -= valor
-                extrato.append(f"[{agora()}] Saque: {formatar_valor(valor)}")
-                numero_saques += 1
-                log(f"Saque de {formatar_valor(valor)} realizado com sucesso.")
+            saldo, numero_saques = sacar(
+                saldo, extrato, numero_saques, limite, LIMITE_SAQUES
+            )
 
         elif opcao == "3":
-            print("\n=== EXTRATO ===")
-            if not extrato:
-                log("Não foram realizadas movimentações.")
-            else:
-                for mov in extrato:
-                    print(mov)
-            print(f"\nSaldo atual: {formatar_valor(saldo)}")
+            mostrar_extrato(saldo, extrato)
 
         elif opcao == "4":
-            log(f"Saldo atual: {formatar_valor(saldo)}")
+            mostrar_saldo(saldo)
 
         elif opcao == "0":
             log("Saindo do sistema bancário...")
