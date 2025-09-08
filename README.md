@@ -32,3 +32,28 @@ Ele permite realizar **depósitos, saques, consultar saldo e extrato**, respeita
 ---
 
 ## Estrutura do Projeto
+
+# Sistema Bancário em Python (POO - CLI)
+
+Este projeto implementa um **sistema bancário simples em Python** usando **Programação Orientada a Objetos (POO)**.  
+O sistema roda no **terminal (CLI)** e permite realizar **depósitos, saques, consultar saldo e extrato** de forma organizada por classes.
+
+---
+
+## Modelo de Classes (UML)
+
+```text
++------------------+          +-------------------+
+|     Cliente      |          |   ContaBancaria   |
++------------------+          +-------------------+
+| - nome: str      |<>------->| - numero: int     |
+| - cpf: str       |          | - saldo: float    |
+| - contas: list   |          | - limite: float   |
++------------------+          | - extrato: list   |
+| + adicionar_conta()         | - numero_saques   |
+| + __str__()                 +-------------------+
+                              | + depositar()     |
+                              | + sacar()         |
+                              | + mostrar_extrato()|
+                              | + mostrar_saldo() |
+                              +-------------------+

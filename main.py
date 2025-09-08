@@ -1,87 +1,82 @@
-# sistema_bancario.py
+# sistema_bancario_poo.py
 from datetime import datetime
-
-# ------------------------
-# Utilidades
-# ------------------------
 
 
 def agora() -> str:
-    """Retorna timestamp formatado."""
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
-def log(msg: str):
-    """Exibe mensagens sempre com timestamp."""
-    print(f"[{agora()}] {msg}")
-
-
 def formatar_valor(valor: float) -> str:
-    """Formata o valor no padrão brasileiro R$ 0,00."""
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
-def ler_valor(mensagem: str) -> float:
-    """Lê um valor numérico válido do usuário."""
-    while True:
-        entrada = input(mensagem)
-        try:
-            valor = float(entrada.replace(",", "."))
-            return valor
-        except ValueError:
-            log("Entrada inválida! Digite um número válido.")
+class ContaBancaria:
+    LIMITE_SAQUES = 3
+    LIMITE_VALOR = 500.0
+
+    def __init__(self, numero: int, cliente: "Cliente"):
+        self.numero = numero
+        self.cliente = cliente
+        self.saldo = 0.0
+        self.extrato = []
+        self.numero_saques = 0
+        self.limite = ContaBancaria.LIMITE_VALOR
+
+    def depositar(self, valor: float):
+        if valor <= 0:
+            print(
+                f"[{agora()}] Operação falhou! O valor do depósito deve ser positivo."
+            )
+            return
+        self.saldo += valor
+        self.extrato.append(f"[{agora()}] Depósito: {formatar_valor(valor)}")
+        print(f"[{agora()}] Depósito de {formatar_valor(valor)} realizado com sucesso.")
+
+    def sacar(self, valor: float):
+        if valor <= 0:
+            print(f"[{agora()}] Operação falhou! O valor do saque deve ser positivo.")
+        elif valor > self.saldo:
+            print(f"[{agora()}] Operação falhou! Saldo insuficiente.")
+        elif valor > self.limite:
+            print(
+                f"[{agora()}] Operação falhou! O valor máximo por saque é {formatar_valor(self.limite)}."
+            )
+        elif self.numero_saques >= ContaBancaria.LIMITE_SAQUES:
+            print(
+                f"[{agora()}] Operação falhou! Número máximo de saques diários atingido."
+            )
+        else:
+            self.saldo -= valor
+            self.extrato.append(f"[{agora()}] Saque: {formatar_valor(valor)}")
+            self.numero_saques += 1
+            print(
+                f"[{agora()}] Saque de {formatar_valor(valor)} realizado com sucesso."
+            )
+
+    def mostrar_extrato(self):
+        print("\n=== EXTRATO ===")
+        if not self.extrato:
+            print(f"[{agora()}] Não foram realizadas movimentações.")
+        else:
+            for mov in self.extrato:
+                print(mov)
+        print(f"\nSaldo atual: {formatar_valor(self.saldo)}")
+
+    def mostrar_saldo(self):
+        print(f"[{agora()}] Saldo atual: {formatar_valor(self.saldo)}")
 
 
-# ------------------------
-# Operações bancárias
-# ------------------------
+class Cliente:
+    def __init__(self, nome: str, cpf: str):
+        self.nome = nome
+        self.cpf = cpf
+        self.contas = []
 
+    def adicionar_conta(self, conta: ContaBancaria):
+        self.contas.append(conta)
 
-def depositar(saldo: float, extrato: list) -> float:
-    valor = ler_valor("Informe o valor do depósito: R$ ")
-    if valor <= 0:
-        log("Operação falhou! O valor do depósito deve ser positivo.")
-    else:
-        saldo += valor
-        extrato.append(f"[{agora()}] Depósito: {formatar_valor(valor)}")
-        log(f"Depósito de {formatar_valor(valor)} realizado com sucesso.")
-    return saldo
-
-
-def sacar(
-    saldo: float, extrato: list, numero_saques: int, limite: float, LIMITE_SAQUES: int
-) -> tuple:
-    valor = ler_valor("Informe o valor do saque: R$ ")
-
-    if valor <= 0:
-        log("Operação falhou! O valor do saque deve ser positivo.")
-    elif valor > saldo:
-        log("Operação falhou! Saldo insuficiente.")
-    elif valor > limite:
-        log(f"Operação falhou! O valor máximo por saque é {formatar_valor(limite)}.")
-    elif numero_saques >= LIMITE_SAQUES:
-        log("Operação falhou! Número máximo de saques diários atingido.")
-    else:
-        saldo -= valor
-        extrato.append(f"[{agora()}] Saque: {formatar_valor(valor)}")
-        numero_saques += 1
-        log(f"Saque de {formatar_valor(valor)} realizado com sucesso.")
-
-    return saldo, numero_saques
-
-
-def mostrar_extrato(saldo: float, extrato: list):
-    print("\n=== EXTRATO ===")
-    if not extrato:
-        log("Não foram realizadas movimentações.")
-    else:
-        for mov in extrato:
-            print(mov)
-    print(f"\nSaldo atual: {formatar_valor(saldo)}")
-
-
-def mostrar_saldo(saldo: float):
-    log(f"Saldo atual: {formatar_valor(saldo)}")
+    def __str__(self):
+        return f"Cliente: {self.nome} - CPF: {self.cpf}"
 
 
 # ------------------------
@@ -90,11 +85,10 @@ def mostrar_saldo(saldo: float):
 
 
 def main():
-    saldo = 0.0
-    limite = 500.0
-    extrato = []
-    numero_saques = 0
-    LIMITE_SAQUES = 3
+    # Criando um cliente de exemplo
+    cliente = Cliente("João Silva", "123.456.789-00")
+    conta = ContaBancaria(1, cliente)
+    cliente.adicionar_conta(conta)
 
     while True:
         print("\n=== SISTEMA BANCÁRIO ===")
@@ -107,25 +101,33 @@ def main():
         opcao = input("Escolha uma opção: ")
 
         if opcao == "1":
-            saldo = depositar(saldo, extrato)
+            try:
+                valor = float(
+                    input("Informe o valor do depósito: R$ ").replace(",", ".")
+                )
+                conta.depositar(valor)
+            except ValueError:
+                print(f"[{agora()}] Entrada inválida! Digite um número válido.")
 
         elif opcao == "2":
-            saldo, numero_saques = sacar(
-                saldo, extrato, numero_saques, limite, LIMITE_SAQUES
-            )
+            try:
+                valor = float(input("Informe o valor do saque: R$ ").replace(",", "."))
+                conta.sacar(valor)
+            except ValueError:
+                print(f"[{agora()}] Entrada inválida! Digite um número válido.")
 
         elif opcao == "3":
-            mostrar_extrato(saldo, extrato)
+            conta.mostrar_extrato()
 
         elif opcao == "4":
-            mostrar_saldo(saldo)
+            conta.mostrar_saldo()
 
         elif opcao == "0":
-            log("Saindo do sistema bancário...")
+            print(f"[{agora()}] Saindo do sistema bancário...")
             break
 
         else:
-            log("Opção inválida! Tente novamente.")
+            print(f"[{agora()}] Opção inválida! Tente novamente.")
 
 
 if __name__ == "__main__":
